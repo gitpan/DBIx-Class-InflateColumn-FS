@@ -1,0 +1,71 @@
+NAME
+    DBIx::Class::InflateColumn::FS - store BLOBs in the file system
+
+SYNOPSIS
+      __PACKAGE__->load_components('InflateColumn::FS Core');
+      __PACKAGE__->add_columns(
+          id => {
+              data_type         => 'INT',
+              is_auto_increment => 1,
+          },
+          file => {
+              data_type => 'TEXT',
+              is_fs_column => 1,
+              fs_column_path => '/var/lib/myapp/myfiles',
+          },
+      );
+      __PACKAGE__->set_primary_key('id');
+
+      # in application code
+      $rs->create({ file => $file_handle });
+
+      $row = $rs->find({ id => $id });
+      my $fh = $row->file->open('r');
+
+DESCRIPTION
+    Provides inflation to a Path::Class::File object allowing file system
+    storage of BLOBS.
+
+    The storage path is specified with "fs_column_path". Each file receives
+    a unique name, so the storage for all FS columns can share the same
+    path.
+
+    Within the path specified by "fs_column_path", files are stored in
+    sub-directories based on the first 2 characters of the unique file
+    names. Up to 256 sub-directories will be created, as needed. Override
+    "_fs_column_dirs" in a derived class to change this behavior.
+
+METHODS
+  register_column
+  _fs_column_storage
+    Provides the file naming algorithm. Override this method to change it.
+
+  _fs_column_dirs
+    Returns the sub-directory components for a given file name. Override it
+    to provide a deeper directory tree or change the algorithm.
+
+  delete
+    Deletes the associated file system storage when a row is deleted.
+
+  update
+    Deletes the associated file system storage when a column is set to null.
+
+  _inflate_fs_column
+    Inflates a file column to a Path::Class::File object.
+
+  _deflate_fs_column
+    Deflates a file column to the arbitrary value, 1. In the database, a
+    file column is just a place holder for inflation/deflation. The actual
+    file lives in the file system.
+
+  table
+    Overridden to provide a hook for specifying the resultset_class. If you
+    provide your own resultset_class, inherit from
+    InflateColumn::FS::ResultSet.
+
+AUTHOR
+    Marc Mims <marc@questright.com>
+
+LICENSE
+    You may distribute this code under the same terms as Perl itself.
+
