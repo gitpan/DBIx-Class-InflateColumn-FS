@@ -8,7 +8,7 @@ use File::Path;
 use File::Copy;
 use Path::Class;
 
-our $VERSION = '0.01000';
+our $VERSION = '0.01001';
 
 =head1 NAME
 
@@ -85,7 +85,7 @@ Provides the file naming algorithm.  Override this method to change it.
 sub _fs_column_storage {
     my ( $self, $column ) = @_;
 
-    my $column_info = $self->column_info($column);
+    my $column_info = $self->result_source->column_info($column);
     $self->throw_exception("$column is not an fs_column")
         unless $column_info->{is_fs_column};
 
@@ -126,7 +126,7 @@ sub delete {
     my ( $self, @rest ) = @_;
 
     for ( $self->columns ) {
-        if ( $self->column_info($_)->{is_fs_column} ) {
+        if ( $self->result_source->column_info($_)->{is_fs_column} ) {
             $self->$_->remove;
         }
     }
@@ -147,9 +147,10 @@ sub update {
 
     # cache existing fs_colums before update so we can delete storge
     # afterwards if necessary
+    my $s = $self->result_source;
     my %fs_column =
         map  { ($_, $self->$_) }
-        grep { $self->column_info($_)->{is_fs_column} }
+        grep { $s->column_info($_)->{is_fs_column} }
         keys %changed;
 
     # attempt super update, first, so it can throw on DB errors
@@ -157,7 +158,7 @@ sub update {
     $self->next::method($upd);
 
     while ( my ($column, $value) = each %changed ) {
-        if ( $self->column_info($column)->{is_fs_column} ) {
+        if ( $s->column_info($column)->{is_fs_column} ) {
             # remove the storage if the column was set to NULL
             $fs_column{$column}->remove if !defined $value;
 
@@ -232,9 +233,19 @@ sub table {
     return $ret;
 }
 
+=head1 SUPPORT
+
+Community support can be found via:
+
+  Mailing list: http://lists.scsys.co.uk/mailman/listinfo/dbix-class/
+
+  IRC: irc.perl.org#dbix-class
+
+The author is C<semifor> on IRC and a member of the mailing list.
+
 =head1 AUTHOR
 
-Marc Mims <marc@questright.com>
+semifor: Marc Mims <marc@questright.com>
 
 =head1 LICENSE
 

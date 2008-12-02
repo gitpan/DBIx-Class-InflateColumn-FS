@@ -63,8 +63,17 @@ METHODS
     provide your own resultset_class, inherit from
     InflateColumn::FS::ResultSet.
 
+SUPPORT
+    Community support can be found via:
+
+      Mailing list: http://lists.scsys.co.uk/mailman/listinfo/dbix-class/
+
+      IRC: irc.perl.org#dbix-class
+
+    The author is "semifor" on IRC and a member of the mailing list.
+
 AUTHOR
-    Marc Mims <marc@questright.com>
+    semifor: Marc Mims <marc@questright.com>
 
 LICENSE
     You may distribute this code under the same terms as Perl itself.

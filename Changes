@@ -1,5 +1,9 @@
-0.00100 2008-10-07 13:18:00
-	- release
+0.01001 2008-12-02 11:32:00
+        - added SUPPORT section to POD
+        - use ->result_source->column_info (mst)
+
+0.01000 2008-10-07 13:18:00
+	    - release
 
 0.00000_04 2008-10-06 16:10:00
         - used base class DBIx::Class::UUIDColumns for it's multiple UUID

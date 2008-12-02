@@ -19,4 +19,5 @@ eval {
     system 'pod2text lib/DBIx/Class/InflateColumn/FS.pm > README';
 };
 
+auto_install;
 WriteAll;

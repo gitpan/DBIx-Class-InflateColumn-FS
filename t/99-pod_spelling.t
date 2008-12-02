@@ -15,8 +15,10 @@ add_stopwords(<DATA>);
 all_pod_files_spelling_ok();
 
 __DATA__
-Marc
-Mims
 BLOBs
 FS
+IRC
+Marc
+Mims
 resultset
+semifor

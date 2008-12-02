@@ -1,7 +1,7 @@
 ---
 abstract: 'store BLOBs in the file system'
 author:
-  - 'Marc Mims <marc@questright.com>'
+  - 'semifor: Marc Mims <marc@questright.com>'
 build_requires:
   DBD::SQLite: 1.12
   DBICx::TestDatabase: 0
@@ -23,4 +23,4 @@ requires:
   perl: 5.6.1
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.01000
+version: 0.01001
