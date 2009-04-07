@@ -22,6 +22,13 @@ __PACKAGE__->add_columns(
         is_fs_column => 1,
         fs_column_path => tempdir(CLEANUP => 1),
     },
+    cover_image_2 => {
+        data_type => 'TEXT',
+        is_nullable => 1,
+        is_fs_column => 1,
+        fs_column_path => tempdir(CLEANUP => 1),
+        fs_new_on_update => 1
+    },
 );
 __PACKAGE__->set_primary_key(qw/id/);
 

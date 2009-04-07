@@ -1,3 +1,8 @@
+0.01002 2009-03-17
+    - fs_new_on_update: new file name on update (Moritz Onken)
+    - fix: ->delete with multiple fs_columns (Moritz Onken)
+    - fs_file_name: factored out file name creation (Moritz Onken)
+
 0.01001 2008-12-02 11:32:00
         - added SUPPORT section to POD
         - use ->result_source->column_info (mst)

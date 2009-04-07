@@ -13,6 +13,12 @@ SYNOPSIS
               is_fs_column => 1,
               fs_column_path => '/var/lib/myapp/myfiles',
           },
+          file_2 => {
+              data_type => 'TEXT',
+              is_fs_column => 1,
+              fs_column_path => '/var/lib/myapp/myfiles',
+              fs_new_on_update => 1
+          },
       );
       __PACKAGE__->set_primary_key('id');
 
@@ -35,10 +41,16 @@ DESCRIPTION
     names. Up to 256 sub-directories will be created, as needed. Override
     "_fs_column_dirs" in a derived class to change this behavior.
 
+    "fs_new_on_update" will create a new file name if the file has been
+    updated.
+
 METHODS
   register_column
-  _fs_column_storage
+  fs_file_name
     Provides the file naming algorithm. Override this method to change it.
+
+    This method is called with two parameters: The name of the column and
+    the "column_info" object.
 
   _fs_column_dirs
     Returns the sub-directory components for a given file name. Override it
@@ -54,9 +66,9 @@ METHODS
     Inflates a file column to a Path::Class::File object.
 
   _deflate_fs_column
-    Deflates a file column to the arbitrary value, 1. In the database, a
-    file column is just a place holder for inflation/deflation. The actual
-    file lives in the file system.
+    Deflates a file column to its storage path name, relative to
+    "fs_column_path". In the database, a file column is just a place holder
+    for inflation/deflation. The actual file lives in the file system.
 
   table
     Overridden to provide a hook for specifying the resultset_class. If you

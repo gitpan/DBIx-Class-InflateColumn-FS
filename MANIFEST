@@ -18,9 +18,11 @@ META.yml
 README
 t/00-load.t
 t/01-fs_columns.t
+t/02-uniq.t
 t/99-pod_coverage.t
 t/99-pod_spelling.t
 t/99-pod_syntax.t
 t/lib/My/TestSchema.pm
 t/lib/My/TestSchema/Author.pm
 t/lib/My/TestSchema/Book.pm
+t/var/testfile.txt

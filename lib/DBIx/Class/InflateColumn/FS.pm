@@ -8,7 +8,7 @@ use File::Path;
 use File::Copy;
 use Path::Class;
 
-our $VERSION = '0.01001';
+our $VERSION = '0.01002';
 
 =head1 NAME
 
@@ -26,6 +26,12 @@ DBIx::Class::InflateColumn::FS - store BLOBs in the file system
           data_type => 'TEXT',
           is_fs_column => 1,
           fs_column_path => '/var/lib/myapp/myfiles',
+      },
+      file_2 => {
+          data_type => 'TEXT',
+          is_fs_column => 1,
+          fs_column_path => '/var/lib/myapp/myfiles',
+          fs_new_on_update => 1
       },
   );
   __PACKAGE__->set_primary_key('id');
@@ -48,6 +54,8 @@ Within the path specified by C<fs_column_path>, files are stored in
 sub-directories based on the first 2 characters of the unique file names.  Up to
 256 sub-directories will be created, as needed.  Override C<_fs_column_dirs> in
 a derived class to change this behavior.
+
+C<fs_new_on_update> will create a new file name if the file has been updated.
 
 =cut
 
@@ -76,24 +84,32 @@ sub register_column {
     });
 }
 
-=head2 _fs_column_storage
+=head2 fs_file_name
 
 Provides the file naming algorithm.  Override this method to change it.
 
+This method is called with two parameters: The name of the column and the
+C<< column_info >> object.
+
 =cut
 
+sub fs_file_name {
+    my ($self, $column, $column_info) = @_;
+    return $self->get_uuid;
+}
+
 sub _fs_column_storage {
-    my ( $self, $column ) = @_;
+    my ( $self, $column, $deflate ) = @_;
 
     my $column_info = $self->result_source->column_info($column);
     $self->throw_exception("$column is not an fs_column")
         unless $column_info->{is_fs_column};
 
-    if ( my $filename = $self->{_column_data}{$column} ) {
+    if ( (!$column_info->{fs_new_on_update} || !$deflate) && ( my $filename = $self->{_column_data}{$column} ) ) {
         return Path::Class::File->new($column_info->{fs_column_path}, $filename);
     }
     else {
-        $filename = $self->get_uuid;
+        $filename = $self->fs_file_name($column, $column_info);
         return Path::Class::File->new(
             $column_info->{fs_column_path},
             $self->_fs_column_dirs($filename),
@@ -127,6 +143,7 @@ sub delete {
 
     for ( $self->columns ) {
         if ( $self->result_source->column_info($_)->{is_fs_column} ) {
+            next unless $self->$_;
             $self->$_->remove;
         }
     }
@@ -177,7 +194,6 @@ Inflates a file column to a Path::Class::File object.
 
 sub _inflate_fs_column {
     my ( $self, $column, $value ) = @_;
-
     return unless defined $value;
 
     return $self->_fs_column_storage($column);
@@ -185,20 +201,26 @@ sub _inflate_fs_column {
 
 =head2 _deflate_fs_column
 
-Deflates a file column to the arbitrary value, 1.  In the database, a
-file column is just a place holder for inflation/deflation.  The actual
-file lives in the file system.
+Deflates a file column to its storage path name, relative to C<fs_column_path>.
+In the database, a file column is just a place holder for inflation/deflation.
+The actual file lives in the file system.
 
 =cut
 
 sub _deflate_fs_column {
     my ( $self, $column, $value ) = @_;
-
+    
     # already deflated?
     return $value unless ref $value;
-
-    my $file = $self->_fs_column_storage($column);
-    if ( $value ne $file ) {
+    my $fs_new_on_update = $self->result_source->column_info($column)->{fs_new_on_update};
+    my $file = $self->_fs_column_storage($column, 1);
+    
+    if ( $fs_new_on_update && (my $oldfile = $self->get_column($column)) ) {
+        my $column_info = $self->result_source->column_info($column);
+        Path::Class::File->new($column_info->{fs_column_path}, $oldfile)->remove;
+    }
+    
+    if ( $fs_new_on_update || $value ne $file ) {
         File::Path::mkpath([$file->dir]);
 
         # get a filehandle if we were passed a Path::Class::File
