@@ -56,6 +56,9 @@ METHODS
     Returns the sub-directory components for a given file name. Override it
     to provide a deeper directory tree or change the algorithm.
 
+  copy
+    Copies a row object, duplicating the files backing fs columns.
+
   delete
     Deletes the associated file system storage when a row is deleted.
 

@@ -2,7 +2,7 @@
 use warnings;
 use strict;
 use DBICx::TestDatabase;
-use Test::More tests => 13;
+use Test::More tests => 19;
 use Path::Class qw/file/;
 use File::Compare;
 use lib qw(t/lib);
@@ -73,3 +73,29 @@ $book->update({ cover_image => $file });
 $book->update({ id => 999 });
 $book->discard_changes;
 ok( -e $book->cover_image, 'storage renamed on PK change' );
+
+#--------------------------------- test copy ---------------------------------
+my $orig_column_data = { %{$book->{_column_data}} };
+my $copy = $book->copy;
+isnt( $copy->cover_image, $book->cover_image, 'copy has its own file backing' );
+ok( compare($copy->cover_image, $book->cover_image) == 0, 'copy contents correct' );
+
+# an update of book shouldn't change the source's _column_data
+is_deeply ( $book->{_column_data}, $orig_column_data, 'copy source unchanged' );
+
+# Regression test (failed on a prior implementation of copy)
+$book = $rs->find({ id => 1, });
+ok( eval{ $copy = $book->copy }, 'copy works with selected elements' );
+
+#----------------------------- infinite recursion ----------------------------
+$book = $rs->create({
+    name          => 'The Never Ending Story',
+    cover_image   => $file,
+    cover_image_2 => $file,
+});
+
+my $cover_image = $book->cover_image->stringify;
+my $cover_image_2 = $book->cover_image->stringify;
+$book->update({ cover_image => $file, cover_image_2 => $file });
+is( $book->cover_image, $cover_image, 'backing filename did not change' );
+isnt( $book->cover_image_2, $cover_image_2, 'backing filename did change for fs_new_on_update column' );

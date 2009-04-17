@@ -2,13 +2,13 @@ package DBIx::Class::InflateColumn::FS;
 
 use strict;
 use warnings;
-use base 'DBIx::Class::UUIDColumns';
+use DBIx::Class::UUIDColumns;
 use File::Spec;
 use File::Path;
-use File::Copy;
+use File::Copy ();
 use Path::Class;
 
-our $VERSION = '0.01002';
+our $VERSION = '0.01003';
 
 =head1 NAME
 
@@ -95,7 +95,7 @@ C<< column_info >> object.
 
 sub fs_file_name {
     my ($self, $column, $column_info) = @_;
-    return $self->get_uuid;
+    return DBIx::Class::UUIDColumns->get_uuid;
 }
 
 sub _fs_column_storage {
@@ -130,6 +130,43 @@ sub _fs_column_dirs {
     my $filename = shift;
 
     return $filename =~ /(..)/;
+}
+
+=head2 copy
+
+Copies a row object, duplicating the files backing fs columns.
+
+=cut
+
+sub copy {
+    my ($self, $changes) = @_;
+
+    $changes ||= {};
+    my $col_data     = { %{$self->{_column_data}} };
+
+    foreach my $col ( keys %$col_data ) {
+        my $column_info = $self->result_source->column_info($col);
+        if ( $column_info->{is_fs_column}
+             && defined $col_data->{$col} ) {  # nothing special required for NULLs
+            $col_data->{$col} = undef;
+            
+            # pass the original file to produce a copy on deflate
+            my $accessor = $column_info->{accessor} || $col;
+            $changes->{$col} ||= $self->$accessor;
+        }
+    }
+
+    my $temp = bless { _column_data => $col_data }, ref $self;
+    $temp->result_source($self->result_source);
+
+    my $copy = $temp->next::method($changes);
+
+    # force reinflation of fs colmuns on next access
+    delete $copy->{_inflated_column}{$_}
+        for grep { $self->result_source->column_info($_)->{is_fs_column} }
+            keys %$col_data;
+
+   return $copy;
 }
 
 =head2 delete
@@ -215,7 +252,7 @@ sub _deflate_fs_column {
     my $fs_new_on_update = $self->result_source->column_info($column)->{fs_new_on_update};
     my $file = $self->_fs_column_storage($column, 1);
     
-    if ( $fs_new_on_update && (my $oldfile = $self->get_column($column)) ) {
+    if ( $fs_new_on_update && (my $oldfile = $self->{_column_data}{$column}) ) {
         my $column_info = $self->result_source->column_info($column);
         Path::Class::File->new($column_info->{fs_column_path}, $oldfile)->remove;
     }

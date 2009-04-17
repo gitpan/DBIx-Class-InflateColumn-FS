@@ -17,6 +17,7 @@ all_pod_files_spelling_ok();
 __DATA__
 BLOBs
 FS
+fs
 IRC
 Marc
 Mims
