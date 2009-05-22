@@ -2,7 +2,7 @@
 use warnings;
 use strict;
 use DBICx::TestDatabase;
-use Test::More tests => 19;
+use Test::More tests => 20;
 use Path::Class qw/file/;
 use File::Compare;
 use lib qw(t/lib);
@@ -99,3 +99,12 @@ my $cover_image_2 = $book->cover_image->stringify;
 $book->update({ cover_image => $file, cover_image_2 => $file });
 is( $book->cover_image, $cover_image, 'backing filename did not change' );
 isnt( $book->cover_image_2, $cover_image_2, 'backing filename did change for fs_new_on_update column' );
+
+
+# ensure FS works with the proposed change for DBIC: make_column_dirty to delete {_column_data}{$column}
+$storage = $book->cover_image;
+
+$book->make_column_dirty('cover_image');
+delete $book->{_column_data}{cover_image};
+$book->update;
+is( $book->cover_image, $storage, 'file backikng filename unchanged')

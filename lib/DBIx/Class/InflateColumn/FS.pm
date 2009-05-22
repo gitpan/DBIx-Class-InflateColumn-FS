@@ -3,12 +3,12 @@ package DBIx::Class::InflateColumn::FS;
 use strict;
 use warnings;
 use DBIx::Class::UUIDColumns;
-use File::Spec;
-use File::Path;
+use File::Spec ();
+use File::Path ();
 use File::Copy ();
-use Path::Class;
+use Path::Class ();
 
-our $VERSION = '0.01003';
+our $VERSION = '0.01004';
 
 =head1 NAME
 
@@ -63,6 +63,25 @@ C<fs_new_on_update> will create a new file name if the file has been updated.
 
 =cut
 
+=head2 inflate_result
+
+=cut
+
+sub inflate_result {
+    my ($class, $source, $me, $prefetch) = @_;
+
+    my $new = $class->next::method($source, $me, $prefetch);
+    
+    while ( my($column, $data) = each %{$new->{_column_data}} ) {
+        if ( $source->column_info($column)->{is_fs_column} && defined $data ) {
+            $new->{_fs_column_filename}{$column} = $data;
+        }
+    }
+    
+    return $new;
+}
+
+
 =head2 register_column
 
 =cut
@@ -99,23 +118,18 @@ sub fs_file_name {
 }
 
 sub _fs_column_storage {
-    my ( $self, $column, $deflate ) = @_;
+    my ( $self, $column ) = @_;
 
     my $column_info = $self->result_source->column_info($column);
     $self->throw_exception("$column is not an fs_column")
         unless $column_info->{is_fs_column};
 
-    if ( (!$column_info->{fs_new_on_update} || !$deflate) && ( my $filename = $self->{_column_data}{$column} ) ) {
-        return Path::Class::File->new($column_info->{fs_column_path}, $filename);
-    }
-    else {
-        $filename = $self->fs_file_name($column, $column_info);
-        return Path::Class::File->new(
-            $column_info->{fs_column_path},
-            $self->_fs_column_dirs($filename),
-            $filename
-        );
-    }
+    $self->{_fs_column_filename}{$column} ||= do {
+        my $filename = $self->fs_file_name($column, $column_info);
+        File::Spec->catfile($self->_fs_column_dirs($filename), $filename);
+    };
+
+    return Path::Class::File->new($column_info->{fs_column_path}, $self->{_fs_column_filename}{$column});
 }
 
 =head2 _fs_column_dirs
@@ -146,27 +160,18 @@ sub copy {
 
     foreach my $col ( keys %$col_data ) {
         my $column_info = $self->result_source->column_info($col);
-        if ( $column_info->{is_fs_column}
-             && defined $col_data->{$col} ) {  # nothing special required for NULLs
-            $col_data->{$col} = undef;
+        if ( $column_info->{is_fs_column} && defined $col_data->{$col} ) {  # nothing special required for NULLs
+            delete $col_data->{$col};
             
             # pass the original file to produce a copy on deflate
-            my $accessor = $column_info->{accessor} || $col;
-            $changes->{$col} ||= $self->$accessor;
+            $changes->{$col} = $self->get_inflated_column($col);
         }
     }
 
     my $temp = bless { _column_data => $col_data }, ref $self;
     $temp->result_source($self->result_source);
 
-    my $copy = $temp->next::method($changes);
-
-    # force reinflation of fs colmuns on next access
-    delete $copy->{_inflated_column}{$_}
-        for grep { $self->result_source->column_info($_)->{is_fs_column} }
-            keys %$col_data;
-
-   return $copy;
+    return $temp->next::method($changes);
 }
 
 =head2 delete
@@ -178,49 +183,52 @@ Deletes the associated file system storage when a row is deleted.
 sub delete {
     my ( $self, @rest ) = @_;
 
-    for ( $self->columns ) {
-        if ( $self->result_source->column_info($_)->{is_fs_column} ) {
-            next unless $self->$_;
-            $self->$_->remove;
+    for my $column ( $self->columns ) {
+        my $column_info = $self->result_source->column_info($column);
+        if ( $column_info->{is_fs_column} ) {
+            my $accessor = $column_info->{accessor} || $column;
+            $self->$accessor && $self->$accessor->remove;
         }
     }
 
     return $self->next::method(@rest);
 }
 
-=head2 update
+=head2 set_column
 
-Deletes the associated file system storage when a column is set to null.
+Deletes file storage when an fs_column is set to undef.
 
 =cut
 
-sub update {
-    my ($self, $upd) = @_;
+sub set_column {
+    my ($self, $column, $new_value) = @_;
 
-    my %changed = ($self->get_dirty_columns, %{$upd || {}});
-
-    # cache existing fs_colums before update so we can delete storge
-    # afterwards if necessary
-    my $s = $self->result_source;
-    my %fs_column =
-        map  { ($_, $self->$_) }
-        grep { $s->column_info($_)->{is_fs_column} }
-        keys %changed;
-
-    # attempt super update, first, so it can throw on DB errors
-    # and perform other checks
-    $self->next::method($upd);
-
-    while ( my ($column, $value) = each %changed ) {
-        if ( $s->column_info($column)->{is_fs_column} ) {
-            # remove the storage if the column was set to NULL
-            $fs_column{$column}->remove if !defined $value;
-
-            # force reinflation on next access
-            delete $self->{_inflated_column}{$column};
-        }
+    if ( !defined $new_value && $self->result_source->column_info($column)->{is_fs_column}
+            && $self->{_fs_column_filename}{$column} ) {
+        $self->_fs_column_storage($column)->remove;
+        delete $self->{_fs_column_filename}{$column};
     }
-    return $self;
+
+    return $self->next::method($column, $new_value);
+}
+
+=head2 set_inflated_column
+
+Re-inflates after setting an fs_column.
+
+=cut
+
+sub set_inflated_column {
+    my ($self, $column, $inflated) = @_;
+
+    $self->next::method($column, $inflated);
+
+    # reinflate
+    if ( defined $inflated && ref $inflated && ref $inflated ne 'SCALAR'
+            && $self->result_source->column_info($column)->{is_fs_column} ) {
+        $inflated = $self->{_inflated_column}{$column} = $self->_fs_column_storage($column);
+    }
+    return $inflated;
 }
 
 =head2 _inflate_fs_column
@@ -233,6 +241,7 @@ sub _inflate_fs_column {
     my ( $self, $column, $value ) = @_;
     return unless defined $value;
 
+    $self->{_fs_column_filename}{$column} = $value;
     return $self->_fs_column_storage($column);
 }
 
@@ -246,18 +255,20 @@ The actual file lives in the file system.
 
 sub _deflate_fs_column {
     my ( $self, $column, $value ) = @_;
-    
-    # already deflated?
-    return $value unless ref $value;
-    my $fs_new_on_update = $self->result_source->column_info($column)->{fs_new_on_update};
-    my $file = $self->_fs_column_storage($column, 1);
-    
-    if ( $fs_new_on_update && (my $oldfile = $self->{_column_data}{$column}) ) {
-        my $column_info = $self->result_source->column_info($column);
-        Path::Class::File->new($column_info->{fs_column_path}, $oldfile)->remove;
+
+    my $column_info = $self->result_source->column_info($column);
+
+    # kill the old storage, rather than overwrite, if fs_new_on_update
+    if ( $column_info->{fs_new_on_update} && $self->{_fs_column_filename}{$column} ) {
+        my $oldfile = $self->_fs_column_storage($column);
+        if ( $oldfile ne $value ) {
+            $oldfile->remove;
+            delete $self->{_fs_column_filename}{$column};
+        }
     }
     
-    if ( $fs_new_on_update || $value ne $file ) {
+    my $file = $self->_fs_column_storage($column);
+    if ( $value ne $file ) {
         File::Path::mkpath([$file->dir]);
 
         # get a filehandle if we were passed a Path::Class::File
@@ -268,8 +279,7 @@ sub _deflate_fs_column {
         # force re-inflation on next access
         delete $self->{_inflated_column}{$column};
     }
-    my $basename = $file->basename;
-    return File::Spec->catfile($self->_fs_column_dirs($basename), $basename);
+    return $self->{_fs_column_filename}{$column};
 }
 
 =head2 table

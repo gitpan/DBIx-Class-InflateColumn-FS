@@ -45,6 +45,7 @@ DESCRIPTION
     updated.
 
 METHODS
+  inflate_result
   register_column
   fs_file_name
     Provides the file naming algorithm. Override this method to change it.
@@ -62,8 +63,11 @@ METHODS
   delete
     Deletes the associated file system storage when a row is deleted.
 
-  update
-    Deletes the associated file system storage when a column is set to null.
+  set_column
+    Deletes file storage when an fs_column is set to undef.
+
+  set_inflated_column
+    Re-inflates after setting an fs_column.
 
   _inflate_fs_column
     Inflates a file column to a Path::Class::File object.

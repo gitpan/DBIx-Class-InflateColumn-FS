@@ -1,3 +1,6 @@
+0.01004 2009-05-14
+    - don't rely on {_column_data} for deflate values
+
 0.01003 2009-04-17
     - use DBIx::Class::UUIDColumns for get_uuid rather than inheriting from it
     - fixed infinite recursion on create with fs_new_on_update column(s)
