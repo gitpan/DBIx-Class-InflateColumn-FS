@@ -1,5 +1,6 @@
 NAME
-    DBIx::Class::InflateColumn::FS - store BLOBs in the file system
+    DBIx::Class::InflateColumn::FS - Inflate/deflate columns to
+    Path::Class::File objects
 
 SYNOPSIS
       __PACKAGE__->load_components('InflateColumn::FS Core');

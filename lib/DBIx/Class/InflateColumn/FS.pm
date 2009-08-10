@@ -8,11 +8,11 @@ use File::Path ();
 use File::Copy ();
 use Path::Class ();
 
-our $VERSION = '0.01004';
+our $VERSION = '0.01005';
 
 =head1 NAME
 
-DBIx::Class::InflateColumn::FS - store BLOBs in the file system
+DBIx::Class::InflateColumn::FS - Inflate/deflate columns to Path::Class::File objects
 
 =head1 SYNOPSIS
 
@@ -73,7 +73,7 @@ sub inflate_result {
     my $new = $class->next::method($source, $me, $prefetch);
     
     while ( my($column, $data) = each %{$new->{_column_data}} ) {
-        if ( $source->column_info($column)->{is_fs_column} && defined $data ) {
+        if ( $source->has_column($column) && $source->column_info($column)->{is_fs_column} && defined $data ) {
             $new->{_fs_column_filename}{$column} = $data;
         }
     }

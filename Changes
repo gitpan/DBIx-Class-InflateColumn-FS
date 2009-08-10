@@ -1,3 +1,7 @@
+0.01005 2009-08-10
+    - bug fix: aliased column names (Moritz Onken)
+    - skip test to accommodate older DBIC releases without make_column_dirty
+
 0.01004 2009-05-14
     - don't rely on {_column_data} for deflate values
 
@@ -12,23 +16,23 @@
     - fs_file_name: factored out file name creation (Moritz Onken)
 
 0.01001 2008-12-02 11:32:00
-        - added SUPPORT section to POD
-        - use ->result_source->column_info (mst)
+    - added SUPPORT section to POD
+    - use ->result_source->column_info (mst)
 
 0.01000 2008-10-07 13:18:00
-	    - release
+    - release
 
 0.00000_04 2008-10-06 16:10:00
-        - used base class DBIx::Class::UUIDColumns for it's multiple UUID
+    - used base class DBIx::Class::UUIDColumns for it's multiple UUID
           provider support
-        - added POD tests
+    - added POD tests
 
 0.00000_03 2008-10-04 15:20:00
-        - store only the path name below fs_column_path
+    - store only the path name below fs_column_path
 
 0.00000_02 2008-10-04 11:25:00
-        - reimplemnted with UUID based filenames
-        - dropped ::SHA1
+    - reimplemnted with UUID based filenames
+    - dropped ::SHA1
 
 0.00000_01 2008-09-30 08:45:00
-        - First development release
+    - First development release
