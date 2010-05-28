@@ -26,4 +26,5 @@ t/99-pod_syntax.t
 t/lib/My/TestSchema.pm
 t/lib/My/TestSchema/Author.pm
 t/lib/My/TestSchema/Book.pm
+t/multi-create.t
 t/var/testfile.txt

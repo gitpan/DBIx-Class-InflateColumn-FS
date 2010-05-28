@@ -1,7 +1,8 @@
+#!perl
 use warnings;
 use strict;
 use DBICx::TestDatabase;
-use Test::More tests => 21;
+use Test::More tests => 24;
 use Path::Class qw/file/;
 use File::Compare;
 use lib qw(t/lib);
@@ -114,3 +115,23 @@ SKIP: {
 
 
 ok($schema->resultset('Book')->search(undef, { select => [qw(id)], as => [qw(foo)] })->all);
+
+{
+    # Objects that are never written to storage should have
+    # backing files removed.
+
+    $book = $rs->new({
+        name        => 'The Unpublished Chronicles of MST',
+        cover_image => $file,
+    });
+
+    # force object deflation
+    $book->get_columns;
+
+    $storage = $book->cover_image;
+    isnt ( $storage, $file, 'object deflated' );
+    ok   ( -e $storage, 'file backing exists' );
+
+    undef $book;
+    ok ( !-e $storage, 'storage deleted for un-inserted row' );
+}

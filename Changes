@@ -1,3 +1,7 @@
+0.01006 2010-05-28
+    - Added DESTROY to delete file backing for un-inserted rows
+    - Added TODO tests for multi-create failure pending DBIx::Class::Row patch
+
 0.01005 2009-08-10
     - bug fix: aliased column names (Moritz Onken)
     - skip test to accommodate older DBIC releases without make_column_dirty

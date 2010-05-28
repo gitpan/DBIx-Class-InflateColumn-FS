@@ -3,7 +3,7 @@ NAME
     Path::Class::File objects
 
 SYNOPSIS
-      __PACKAGE__->load_components('InflateColumn::FS Core');
+      __PACKAGE__->load_components(qw/InflateColumn::FS Core/);
       __PACKAGE__->add_columns(
           id => {
               data_type         => 'INT',

@@ -14,6 +14,7 @@ requires 'DBIx::Class::UUIDColumns' => 0.02005;
 
 test_requires 'DBD::SQLite'         => 1.12;
 test_requires 'DBICx::TestDatabase' => 0;
+test_requires 'File::Find';
 
 eval {
     system 'pod2text lib/DBIx/Class/InflateColumn/FS.pm > README';

@@ -8,7 +8,7 @@ use File::Path ();
 use File::Copy ();
 use Path::Class ();
 
-our $VERSION = '0.01005';
+our $VERSION = '0.01006';
 
 =head1 NAME
 
@@ -16,7 +16,7 @@ DBIx::Class::InflateColumn::FS - Inflate/deflate columns to Path::Class::File ob
 
 =head1 SYNOPSIS
 
-  __PACKAGE__->load_components('InflateColumn::FS Core');
+  __PACKAGE__->load_components(qw/InflateColumn::FS Core/);
   __PACKAGE__->add_columns(
       id => {
           data_type         => 'INT',
@@ -276,10 +276,25 @@ sub _deflate_fs_column {
         my $fh2 = $file->openw or die;
         File::Copy::copy($fh1, $fh2);
 
-        # force re-inflation on next access
-        delete $self->{_inflated_column}{$column};
+        $self->{_inflated_column}{$column} = $file;
     }
     return $self->{_fs_column_filename}{$column};
+}
+
+sub DESTROY {
+    my $self = shift;
+
+    return if $self->in_storage;
+
+    # If fs columns were deflated, but the row was never stored, we need to delete the
+    # backing files.
+    while ( my ( $col, $data ) = each %{ $self->{_column_data} } ) {
+        my $column_info = $self->result_source->column_info($col);
+        if ( $column_info->{is_fs_column} && defined $data ) {
+            my $accessor = $column_info->{accessor} || $col;
+            $self->$accessor->remove;
+        }
+    }
 }
 
 =head2 table

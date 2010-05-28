@@ -12,6 +12,11 @@ __PACKAGE__->add_columns(
         data_type => 'INT',
         is_auto_increment => 1,
     },
+    author_id => {
+        data_type      => 'INT',
+        is_foreign_key => 1,
+        is_nullable    => 1,
+    },
     name => {
         data_type => 'VARCHAR',
         size => 60,
@@ -31,5 +36,6 @@ __PACKAGE__->add_columns(
     },
 );
 __PACKAGE__->set_primary_key(qw/id/);
+__PACKAGE__->belongs_to(author => 'My::TestSchema::Author', 'author_id');
 
 1;

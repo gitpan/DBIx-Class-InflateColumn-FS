@@ -24,5 +24,6 @@ __PACKAGE__->add_columns(
     },
 );
 __PACKAGE__->set_primary_key(qw/id/);
+__PACKAGE__->has_many(books => 'My::TestSchema::Book', 'author_id');
 
 1;

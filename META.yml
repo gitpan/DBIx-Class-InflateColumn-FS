@@ -6,10 +6,11 @@ build_requires:
   DBD::SQLite: 1.12
   DBICx::TestDatabase: 0
   ExtUtils::MakeMaker: 6.42
+  File::Find: 0
 configure_requires:
   ExtUtils::MakeMaker: 6.42
 distribution_type: module
-generated_by: 'Module::Install version 0.91'
+generated_by: 'Module::Install version 0.97'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -20,10 +21,13 @@ no_index:
     - inc
     - t
 requires:
+  DBD::SQLite: 1.12
+  DBICx::TestDatabase: 0
   DBIx::Class: 0.08
   DBIx::Class::UUIDColumns: 0.02005
+  File::Find: 0
   Path::Class: 0
   perl: 5.6.1
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.01005
+version: 0.01006
