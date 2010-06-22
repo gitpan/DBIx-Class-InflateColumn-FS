@@ -2,7 +2,7 @@
 use warnings;
 use strict;
 use DBICx::TestDatabase;
-use Test::More tests => 24;
+use Test::More tests => 26;
 use Path::Class qw/file/;
 use File::Compare;
 use lib qw(t/lib);
@@ -60,6 +60,24 @@ $book->update;
 close $fh or die;
 
 ok( compare($book->cover_image, $0) == 0, 'store from filehandle' );
+
+# missing fs_column
+{
+    my $book = $rs->create({ name => 'No cover image' });
+
+    ok ( !defined $book->cover_image, 'missing fs_column' );
+
+    open my $fh, '<', $0 or die "failed to open $0 for read: $!\n";
+
+    $book->cover_image($fh);
+    $book->update;
+    close $fh or die;
+
+    $book->discard_changes;   # reload from db
+
+    ok( defined $book->cover_image && compare($book->cover_image, $0) == 0,
+        'store from filehandle (missing fs column)' );
+}
 
 # setting fs_column to null should delete storage
 $book = $rs->create({ name => 'Here today, gone tomorrow',

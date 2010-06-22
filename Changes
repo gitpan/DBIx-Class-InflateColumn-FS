@@ -1,3 +1,6 @@
+0.01007 2010-06-22
+    - Bug fix: ensure fs columns are marked dirty when set via accessors
+
 0.01006 2010-05-28
     - Added DESTROY to delete file backing for un-inserted rows
     - Added TODO tests for multi-create failure pending DBIx::Class::Row patch

@@ -95,6 +95,13 @@ SUPPORT
 AUTHOR
     semifor: Marc Mims <marc@questright.com>
 
+CONTRIBUTORS
+    mst: Matt S. Trout <mst@shadowcatsystems.co.uk>
+
+    mo: Moritz Onken <onken@netcubed.de>
+
+    norbi: Norbert Buchmuller <norbi@nix.hu>
+
 LICENSE
     You may distribute this code under the same terms as Perl itself.
 

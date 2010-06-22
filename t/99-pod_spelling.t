@@ -16,10 +16,14 @@ all_pod_files_spelling_ok();
 
 __DATA__
 BLOBs
+Buchmuller
 FS
-fs
 IRC
 Marc
 Mims
+Onken
+fs
+mst
+norbi
 resultset
 semifor

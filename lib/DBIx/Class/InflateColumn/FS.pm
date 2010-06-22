@@ -8,7 +8,7 @@ use File::Path ();
 use File::Copy ();
 use Path::Class ();
 
-our $VERSION = '0.01006';
+our $VERSION = '0.01007';
 
 =head1 NAME
 
@@ -277,6 +277,9 @@ sub _deflate_fs_column {
         File::Copy::copy($fh1, $fh2);
 
         $self->{_inflated_column}{$column} = $file;
+
+        # ensure the column will be marked dirty
+        $self->{_column_data}{$column} = undef;
     }
     return $self->{_fs_column_filename}{$column};
 }
@@ -330,6 +333,14 @@ The author is C<semifor> on IRC and a member of the mailing list.
 =head1 AUTHOR
 
 semifor: Marc Mims <marc@questright.com>
+
+=head1 CONTRIBUTORS
+
+mst: Matt S. Trout <mst@shadowcatsystems.co.uk>
+
+mo: Moritz Onken <onken@netcubed.de>
+
+norbi: Norbert Buchmuller <norbi@nix.hu>
 
 =head1 LICENSE
 
